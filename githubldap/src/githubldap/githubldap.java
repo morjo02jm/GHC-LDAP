@@ -45,7 +45,7 @@ import junit.framework.*;
 
 
 //Main Class
-@SuppressWarnings("unused")
+//@SuppressWarnings("unused")
 public class githubldap extends TestCase implements IJCaLogStreamListener 
 {
 	String LogName = "githubldap.log";
@@ -583,8 +583,8 @@ public class githubldap extends TestCase implements IJCaLogStreamListener
 				
 				for (int j=0; j<JazzLDAPGroupFormat[iJazzType].length; j++)
 				{
-					String JazzLDAPUserGroup = JazzLDAPGroup[j].format(JazzLDAPGroupFormat[iJazzType][j],
-   		                                                               AuthSchemas[iJazzType][j]);
+					String JazzLDAPUserGroup = JazzLDAPGroupFormat[iJazzType][j].replaceAll("%s", AuthSchemas[iJazzType][j]);
+					//String JazzLDAPUserGroup = JazzLDAPGroup[j].format(JazzLDAPGroupFormat[iJazzType][j],AuthSchemas[iJazzType][j]);
 					ProcessLDAPUserGroup(ctx,
 							             JazzLDAPUserGroup,
 							             cJazzUsers[i]);
