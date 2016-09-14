@@ -54,8 +54,9 @@ public class githubldap extends TestCase implements IJCaLogStreamListener
 	private JCaHarvest harvest;
 	private static PrintWriter Log = null;
 	private boolean debug = false;
-	static boolean bSynch = false;
-	static int iJazzType = 0;
+	private static boolean bDump = false;
+	private static String DumpFile = "";
+	static int iDLType = 0;
 	
 	githubldap()
 	{
@@ -134,7 +135,7 @@ public class githubldap extends TestCase implements IJCaLogStreamListener
 // LDAP-related routines
 	
 	private static boolean AddUserToLDAPGroup(DirContext ctx, 
-			                                  String JazzLDAPUserGroup, 
+			                                  String DLLDAPUserGroup, 
 			                                  String userDN)
 	{		
 		try {
@@ -147,7 +148,7 @@ public class githubldap extends TestCase implements IJCaLogStreamListener
 			};  
 			
 			
-			ctx.modifyAttributes( JazzLDAPUserGroup, roleMods );  
+			ctx.modifyAttributes( DLLDAPUserGroup, roleMods );  
 
 		} catch (javax.naming.AuthenticationException e) {
 			iReturnCode = 1;
@@ -171,7 +172,7 @@ public class githubldap extends TestCase implements IJCaLogStreamListener
 	
 	
 	private static boolean RemoveUserFromLDAPGroup(DirContext ctx, 
-                                                   String JazzLDAPUserGroup, 
+                                                   String DLLDAPUserGroup, 
                                                    String userDN)
 	{		
 		try {
@@ -183,7 +184,7 @@ public class githubldap extends TestCase implements IJCaLogStreamListener
 				new ModificationItem( DirContext.REMOVE_ATTRIBUTE, new BasicAttribute( "member", sDN ) )   
 			};  
 						
-			ctx.modifyAttributes( JazzLDAPUserGroup, roleMods );  
+			ctx.modifyAttributes( DLLDAPUserGroup, roleMods );  
 		
 		} catch (javax.naming.AuthenticationException e) {
 			iReturnCode = 1;
@@ -309,18 +310,18 @@ public class githubldap extends TestCase implements IJCaLogStreamListener
 	} // end ProcessLDAPRegion
 	
 	private static void ProcessLDAPUserGroup(DirContext ctx, 
-			                                 String JazzLDAPUserGroup, 
-			                                 JCaContainer cJazzUsers)
+			                                 String DLLDAPUserGroup, 
+			                                 JCaContainer cDLUsers)
 	{
 		try {
 			// Retrieve attributes for a specific container
 			int cIndex = 0;		
-			if (cJazzUsers.getKeyCount() > 0)
+			if (cDLUsers.getKeyCount() > 0)
 			{
-				cIndex = cJazzUsers.getKeyElementCount("member");
+				cIndex = cDLUsers.getKeyElementCount("member");
 			}
 			
-			Attributes attributes = ctx.getAttributes(JazzLDAPUserGroup);
+			Attributes attributes = ctx.getAttributes(DLLDAPUserGroup);
 			for (NamingEnumeration ae = attributes.getAll(); ae.hasMore();) {
 			    Attribute attr = (Attribute)ae.next();
 			    //printLog("attribute: " + attr.getID());
@@ -338,10 +339,12 @@ public class githubldap extends TestCase implements IJCaLogStreamListener
 				    	int iStart = dn.indexOf("CN=");
 				    	int iEnd   = dn.indexOf(',', iStart);
 				    	String pmfkey = dn.substring(iStart+3, iEnd);
-				    	int iJazz[] = cJazzUsers.find("member", pmfkey);
-				    	if (iJazz.length == 0)
-				    		cJazzUsers.setString("member", pmfkey, cIndex++);
+				    	int iDL[] = cDLUsers.find("member", pmfkey);
+				    	if (iDL.length == 0) {
+				    		cDLUsers.setString("dn",     dn,     cIndex);
+				    		cDLUsers.setString("member", pmfkey, cIndex++);
 				    	    //printLog("member: "+pmfkey); //temp
+				    	}
 				    }
 				}
 			}
@@ -363,11 +366,11 @@ public class githubldap extends TestCase implements IJCaLogStreamListener
 // main processing routine    
     
 	private static void ProcessLDAPGroupUsers(JCaContainer cLDAP,
-										      JCaContainer cJazzUsers,
+										      JCaContainer cDLUsers,
 			                                  DirContext ctx,
 			                                  JCaContainer cAddUsers, 
 			                                  JCaContainer cDelUsers,
-			                                  String JazzLDAPUserGroup,
+			                                  String DLLDAPUserGroup,
 			                                  String sAuthName) 
 	{
 		
@@ -376,60 +379,110 @@ public class githubldap extends TestCase implements IJCaLogStreamListener
 		try {
 			boolean found=false;
 			
-			// 1. Active user accounts in CA.COM but with no JazzUser privilege
-			printLog("1. Remove GitHub Users ");
+			// 1. Remove DL users
+			printLog("1. Remove GitHub Users from DL");
 			if (!cDelUsers.isEmpty())
 			{
 				for (int i=0; i<cDelUsers.getKeyElementCount("pmfkey"); i++ )
 				{
 					String sID = cDelUsers.getString("pmfkey", i);
 					
-					int iUser[] = cJazzUsers.find("member", sID);
-					
-					if (iUser.length > 0 || true) //forced deletion
+					int iLDAP[] = cLDAP.find("sAMAccountName", sID);
+					if (iLDAP.length > 0)
 					{
-						int iLDAP[] = cLDAP.find("sAMAccountName", sID);
-						if (iLDAP.length > 0)
+						String sUser  = cLDAP.getString("displayName", iLDAP[0]);
+						String userDN = cLDAP.getString("distinguishedName", iLDAP[0]);									
+						
+						// Force removal if a valid user in directory
+						if (RemoveUserFromLDAPGroup(ctx, DLLDAPUserGroup, userDN))
 						{
-							String sUser  = cLDAP.getString("displayName", iLDAP[0]);
-							String userDN = cLDAP.getString("distinguishedName", iLDAP[0]);									
-							if (RemoveUserFromLDAPGroup(ctx, JazzLDAPUserGroup, userDN))
-							{
-								// Account not found in CA.COM
-								printLog(">>>User (deactivate): "+sUser+ "("+ sID+")");									
-							}
+							printLog(">>>User (deactivate): "+sUser+ "("+ sID+")");									
 						}
-					}
+					} // valid directory user
+
 				}  //loop over user accounts						
 			}	/* Delete List is not empty */
 			
-			// 2. LDAP users with no RTC user account
-			printLog("2. Add GitHub Users");
+			// 2. Add users to DL
+			printLog("2. Add GitHub Users to DL");
 			if (!cAddUsers.isEmpty())
 			{
 				for (int i=0; i<cAddUsers.getKeyElementCount("pmfkey"); i++ )
-				{
+				{					
 					String sID = cAddUsers.getString("pmfkey", i);
 					
-					int iUser[] = cJazzUsers.find("member", sID);
-					
-					if (iUser.length == 0)
+					int iLDAP[] = cLDAP.find("sAMAccountName", sID);
+					if (iLDAP.length > 0)
 					{
-						int iLDAP[] = cLDAP.find("sAMAccountName", sID);
+						String sUser  = cLDAP.getString("displayName", iLDAP[0]);
+						String userDN = cLDAP.getString("distinguishedName", iLDAP[0]);									
+						
+						int iUser[] = cDLUsers.find("dn", userDN);
+						
+						if (iUser.length == 0) {
+							if (AddUserToLDAPGroup(ctx, DLLDAPUserGroup, userDN))
+							{
+								// Add user to LDAP DLUser group
+								printLog(">>>User (activate): "+sUser+ "("+ sID+")");											
+							}							
+						} // user not found in DL 
+					} //  user in directory 
+				}  // loop over user accounts						
+            } // Add list is not empty 	
+
+			// 3. Dump Request
+			printLog("3. Dump User DL");
+			if (bDump)
+			{
+
+				File file = new File(DumpFile);
+
+				// if file doesnt exists, then create it
+				if (!file.exists()) {
+					file.createNewFile();
+				}
+
+				FileWriter fw = new FileWriter(file.getAbsoluteFile());
+				BufferedWriter bw = new BufferedWriter(fw);
+				
+				int nSize = cDLUsers.getKeyElementCount("dn");
+				if (nSize < 1500) {					
+					for (int i=0; i<nSize; i++ )
+					{
+						String sDN = cDLUsers.getString("dn", i);
+						int iLDAP[] = cLDAP.find("distinguishedName", sDN);
 						if (iLDAP.length > 0)
 						{
-							String sUser     = cLDAP.getString("displayName", iLDAP[0]);
-							String userDN = cLDAP.getString("distinguishedName", iLDAP[0]);									
-							if (AddUserToLDAPGroup(ctx, JazzLDAPUserGroup, userDN))
-							{
-								// Add user to LDAP JazzUser group
-								printLog(">>>User (activate): "+sUser+ "("+ sID+")");											
+							String sUser = cLDAP.getString("displayName", iLDAP[0]);
+							String sID   = cLDAP.getString("sAMAccountName", iLDAP[0]);									
+						    //printLog(sUser+ " ("+ sID+")");	
+							bw.write(sUser+ " ("+ sID+")\n");
+						} // user exists in domain
+					}  // loop over DL members						
+				} // DL size does not exceed 1499
+				else {
+					for (int i=0; i<cLDAP.getKeyElementCount("sAMAccountName"); i++) {
+						String sID    = cLDAP.getString("sAMAccountName", i);	
+						String sUser  = cLDAP.getString("displayName", i);
+						String userDN = cLDAP.getString("distinguishedName", i);
+						
+						int iUser[]=cDLUsers.find("dn", userDN);
+						if (iUser.length > 0)
+						{
+							bw.write(sUser + " ("+ sID + ")\n");
+						}
+						else {
+							if (AddUserToLDAPGroup(ctx, DLLDAPUserGroup, userDN)) {
+								RemoveUserFromLDAPGroup(ctx, DLLDAPUserGroup, userDN);
 							}
-							
-						} /* user exists in domain */
-					} /*  user does not exist in GitHub DL */
-				}  //loop over user accounts						
-			} /* Add list is not empty */	
+							else {
+								bw.write(sUser + " ("+ sID + ")\n");								
+							}
+						}
+					}
+				} // DL size exceeds 1499
+				bw.close();
+			} /* Dump Users */	
 		} /* try block */
 		catch (Throwable e) {
 			System.out.println("exception happened - here's what I know: ");
@@ -471,7 +524,7 @@ public class githubldap extends TestCase implements IJCaLogStreamListener
 			"cn=Development-Tools-Access-Group,ou=groups,ou=north america"
 	  	};
 
-		String[][] JazzLDAPGroupFormat =
+		String[][] DLLDAPGroupFormat =
 		{
 			GitHubDevelopersLDAPGroupFormat,
 			GitHubAdminLDAPGroupFormat
@@ -494,7 +547,7 @@ public class githubldap extends TestCase implements IJCaLogStreamListener
 				GitHubUserAuthAdminSchemas
 		};
 		
-		JCaContainer cJazzUsers[] = { 
+		JCaContainer cDLUsers[] = { 
 				  						new JCaContainer(),
 				  						new JCaContainer()
 									};
@@ -516,13 +569,14 @@ public class githubldap extends TestCase implements IJCaLogStreamListener
 			{
 				ProcessInputList(cDelUsers, args[++i]);
 			}			
-			else if (args[i].compareToIgnoreCase("-synch") == 0 )
-			{
-				bSynch = true;
-			}			
 			else if (args[i].compareToIgnoreCase("-del") == 0 )
 			{
 				ProcessInputList(cDelUsers, args[++i]);
+			}			
+			else if (args[i].compareToIgnoreCase("-dump") == 0 )
+			{
+				DumpFile = args[++i];
+				bDump = true;
 			}			
 			else if (args[i].compareToIgnoreCase("-log") == 0 )
 			{
@@ -530,17 +584,25 @@ public class githubldap extends TestCase implements IJCaLogStreamListener
 			}	
 			else if (args[i].compareToIgnoreCase("-developers") == 0 )
 			{
-				iJazzType = 0;
+				iDLType = 0;
 			}	
 			else if (args[i].compareToIgnoreCase("-admins") == 0 )
 			{
-				iJazzType = 1;
+				iDLType = 1;
 			}	
 			
 			else {
-				System.out.println("Usage: githubldap [-add textfile] [-del textfile] [-log textfile] [-h |-?]");
-				System.out.println(" -add option will add user accounts for pmfkeys in textfile param.");
-				System.out.println(" -del option will archive user accounts for pmfkeys in textfile param.");
+				System.out.println("Usage: githubldap [-add textfile]"
+			                                       + "[-del textfile] "
+			                                       + "[-dump textfile] "
+			                                       + "[-dump textfile] "
+			                                       + "[ -developers | -admins ] "
+						                           + "[-log textfile] [-h |-?]");
+				System.out.println(" -add option will add users to DL for pmfkeys in textfile param.");
+				System.out.println(" -del option will remove users from DL for pmfkeys in textfile param.");
+				System.out.println(" -dump option will dump user in DL to textfile param.");
+				System.out.println(" -admins option will select Team-GitHub-Admins DL.");
+				System.out.println(" -developers option will select Developer-Tools-Access-Group DL (default).");
 				System.out.println(" -log option specifies location log file.");
 				System.exit(iReturnCode);
 			}
@@ -576,25 +638,25 @@ public class githubldap extends TestCase implements IJCaLogStreamListener
 			// Show cLDAP statistics
 			printLog("Number of CA.COM user containers read: " + cLDAP.getKeyElementCount("mail"));
 
-			// Read Jazz LDAP group users
-			for (int i=0; i<AuthSchemas[iJazzType].length; i++)
+			// Read DL LDAP group users
+			for (int i=0; i<AuthSchemas[iDLType].length; i++)
 			{
-				String[] JazzLDAPGroup = new String[JazzLDAPGroupFormat[iJazzType].length];
+				String[] DLLDAPGroup = new String[DLLDAPGroupFormat[iDLType].length];
 				
-				for (int j=0; j<JazzLDAPGroupFormat[iJazzType].length; j++)
+				for (int j=0; j<DLLDAPGroupFormat[iDLType].length; j++)
 				{
-					String JazzLDAPUserGroup = JazzLDAPGroupFormat[iJazzType][j].replaceAll("%s", AuthSchemas[iJazzType][j]);
-					//String JazzLDAPUserGroup = JazzLDAPGroup[j].format(JazzLDAPGroupFormat[iJazzType][j],AuthSchemas[iJazzType][j]);
+					String DLLDAPUserGroup = DLLDAPGroupFormat[iDLType][j].replaceAll("%s", AuthSchemas[iDLType][j]);
+					//String DLLDAPUserGroup = DLLDAPGroup[j].format(DLLDAPGroupFormat[iDLType][j],AuthSchemas[iDLType][j]);
 					ProcessLDAPUserGroup(ctx,
-							             JazzLDAPUserGroup,
-							             cJazzUsers[i]);
+							             DLLDAPUserGroup,
+							             cDLUsers[i]);
 					ProcessLDAPGroupUsers(cLDAP,
-						                  cJazzUsers[i],
+						                  cDLUsers[i],
                                           ctx,
                                           cAddUsers, 
                                           cDelUsers,
-                                          JazzLDAPUserGroup,
-                                          AuthSchemas[iJazzType][j]);
+                                          DLLDAPUserGroup,
+                                          AuthSchemas[iDLType][j]);
 				}
 			};
 			
