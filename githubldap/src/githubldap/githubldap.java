@@ -57,6 +57,7 @@ public class githubldap extends TestCase implements IJCaLogStreamListener
 	private static boolean bDump = false;
 	private static String DumpFile = "";
 	static int iDLType = 0;
+	static String sAdminPassword = "bad";
 	
 	githubldap()
 	{
@@ -556,6 +557,10 @@ public class githubldap extends TestCase implements IJCaLogStreamListener
 		JCaContainer cAddUsers = new JCaContainer();
 		JCaContainer cDelUsers = new JCaContainer();
 		
+		Map<String, String> environ = System.getenv();
+        for (String envName : environ.keySet()) {
+        	if (envName.equalsIgnoreCase("FLOWDOCK_ADMIN_PASSWORD")) sAdminPassword = environ.get(envName);
+        }
 
 		
 		// check parameters
@@ -593,11 +598,10 @@ public class githubldap extends TestCase implements IJCaLogStreamListener
 			
 			else {
 				System.out.println("Usage: githubldap [-add textfile]"
-			                                       + "[-del textfile] "
-			                                       + "[-dump textfile] "
-			                                       + "[-dump textfile] "
-			                                       + "[ -developers | -admins ] "
-						                           + "[-log textfile] [-h |-?]");
+			                                       + " [-del textfile] "
+			                                       + " [-dump textfile] "
+			                                       + " [ -developers | -admins ] "
+						                           + " [-log textfile] [-h |-?]");
 				System.out.println(" -add option will add users to DL for pmfkeys in textfile param.");
 				System.out.println(" -del option will remove users from DL for pmfkeys in textfile param.");
 				System.out.println(" -dump option will dump user in DL to textfile param.");
@@ -613,7 +617,7 @@ public class githubldap extends TestCase implements IJCaLogStreamListener
 		//env.put(Context.SECURITY_PRINCIPAL, "harvestcscr");
 		//env.put(Context.SECURITY_CREDENTIALS, "w3G0Th3Be3t");
 		env.put(Context.SECURITY_PRINCIPAL, "toolsadmin");
-		env.put(Context.SECURITY_CREDENTIALS, "R.oj;G>]<?.4UiQ");
+		env.put(Context.SECURITY_CREDENTIALS, sAdminPassword);
 		env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
 						
 		try {
