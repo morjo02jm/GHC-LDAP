@@ -3,9 +3,6 @@ package githubldap;
 import commonldap.CommonLdap;
 import commonldap.JCaContainer;
 
-import java.io.*;
-import java.io.File; 
-
 
 //Main Class
 //@SuppressWarnings("unused")
@@ -14,7 +11,7 @@ public class GithubLdap
 	private static int iReturnCode = 0;
 	private static CommonLdap frame;
 	
-	private void GithubLdap()
+	GithubLdap()
 	{
 		// leave blank for now
 	}
