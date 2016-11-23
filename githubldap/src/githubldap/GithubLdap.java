@@ -10,7 +10,7 @@ import java.io.File;
 
 //Main Class
 //@SuppressWarnings("unused")
-public class githubldap 
+public class GithubLdap 
 {
 	private static int iReturnCode = 0;
 	private static CommonLdap frame;
@@ -18,7 +18,7 @@ public class githubldap
 	private static boolean bDump = false;
 	private static String sDumpFile = "";
 	
-	private void githubldap()
+	private void GithubLdap()
 	{
 		// leave blank for now
 	}
@@ -51,10 +51,10 @@ public class githubldap
 					if (iLDAP.length > 0)
 					{
 						String sUser  = cLDAP.getString("displayName", iLDAP[0]);
-						String userDN = cLDAP.getString("distinguishedName", iLDAP[0]);									
+						String sUserDN = cLDAP.getString("distinguishedName", iLDAP[0]);									
 						
 						// Force removal if a valid user in directory
-						if (frame.removeUserFromLDAPGroup(sDLLDAPUserGroup, userDN))
+						if (frame.removeUserFromLDAPGroup(sDLLDAPUserGroup, sUserDN))
 						{
 							frame.printLog(">>>User (deactivate): "+sUser+ "("+ sID+")");									
 						}
@@ -75,12 +75,12 @@ public class githubldap
 					if (iLDAP.length > 0)
 					{
 						String sUser  = cLDAP.getString("displayName", iLDAP[0]);
-						String userDN = cLDAP.getString("distinguishedName", iLDAP[0]);									
+						String sUserDN = cLDAP.getString("distinguishedName", iLDAP[0]);									
 						
-						int iUser[] = cDLUsers.find("dn", userDN);
+						int iUser[] = cDLUsers.find("dn", sUserDN);
 						
 						if (iUser.length == 0) {
-							if (frame.addUserToLDAPGroup(sDLLDAPUserGroup, userDN))
+							if (frame.addUserToLDAPGroup(sDLLDAPUserGroup, sUserDN))
 							{
 								// Add user to LDAP DLUser group
 								frame.printLog(">>>User (activate): "+sUser+ "("+ sID+")");											
@@ -124,16 +124,16 @@ public class githubldap
 					for (int i=0; i<cLDAP.getKeyElementCount("sAMAccountName"); i++) {
 						String sID    = cLDAP.getString("sAMAccountName", i);	
 						String sUser  = cLDAP.getString("displayName", i);
-						String userDN = cLDAP.getString("distinguishedName", i);
+						String sUserDN = cLDAP.getString("distinguishedName", i);
 						
-						int iUser[]=cDLUsers.find("dn", userDN);
+						int iUser[]=cDLUsers.find("dn", sUserDN);
 						if (iUser.length > 0)
 						{
 							bw.write(sUser + " ("+ sID + ")\n");
 						}
 						else {
-							if (frame.addUserToLDAPGroup(sDLLDAPUserGroup, userDN)) {
-								frame.removeUserFromLDAPGroup(sDLLDAPUserGroup, userDN);
+							if (frame.addUserToLDAPGroup(sDLLDAPUserGroup, sUserDN)) {
+								frame.removeUserFromLDAPGroup(sDLLDAPUserGroup, sUserDN);
 							}
 							else {
 								bw.write(sUser + " ("+ sID + ")\n");								
