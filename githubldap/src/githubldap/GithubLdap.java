@@ -97,17 +97,17 @@ public class GithubLdap
 			}	
 			
 			else {
-				System.out.println("Usage: githubldap [-add textfile]"
+				frame.printLog("Usage: githubldap [-add textfile]"
 			                                       + " [-del textfile] "
 			                                       + " [-dump textfile] "
 			                                       + " [ -developers | -admins ] "
 						                           + " [-log textfile] [-h |-?]");
-				System.out.println(" -add option will add users to DL for pmfkeys in textfile param.");
-				System.out.println(" -del option will remove users from DL for pmfkeys in textfile param.");
-				System.out.println(" -dump option will dump user in DL to textfile param.");
-				System.out.println(" -admins option will select Team-GitHub-Admins DL.");
-				System.out.println(" -developers option will select Developer-Tools-Access-Group DL (default).");
-				System.out.println(" -log option specifies location log file.");
+				frame.printLog(" -add option will add users to DL for pmfkeys in textfile param.");
+				frame.printLog(" -del option will remove users from DL for pmfkeys in textfile param.");
+				frame.printLog(" -dump option will dump user in DL to textfile param.");
+				frame.printLog(" -admins option will select Team-GitHub-Admins DL.");
+				frame.printLog(" -developers option will select Developer-Tools-Access-Group DL (default).");
+				frame.printLog(" -log option specifies location log file.");
 				System.exit(iReturnCode);
 			}
 		} // end for
@@ -144,7 +144,7 @@ public class GithubLdap
 								
 		} catch (Exception e) {
 			iReturnCode = 1;
-		    System.err.println(e);			
+		    frame.printErr(e.getLocalizedMessage());			
 			//e.printStackTrace();
 		    System.exit(iReturnCode);		    
 		}
