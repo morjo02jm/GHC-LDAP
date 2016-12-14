@@ -1,14 +1,16 @@
 # githubldap
 Basic process for adding and deleting users from the Github control DL, Development-Tools-Access-Group
 
-Prerequisites:
+Usage: sonarqubeldap [-add textfile] [-del textfile]  [-dump textfile] [-log textfile] [-synch] [-h |-?]
+	-add option will add users to DL for pmfkeys in textfile param.
+	-del option will remove users from DL for pmfkeys in textfile param.
+	-dump option will dump user in DL to textfile param.
+	-synch option will synchronize attribute data with directory.
+	-log option specifies location log file.
 
-a) JRE 1.8.0
-b) CA Harvest SCM jhsdk.jar and dependent libraries.
+Prerequisites (Environment):
+	DL_ADMINISTRATOR_PASSWORD	AES Encrypted value for the DL owner (i.e. Toolsadmin@ca.com) password.
+	
+Files:
 
-Usage:
-
-java -jar githubldap.jar -add [list of users to add to DL] -del [list of users to delete from DL]
-                         [-developers | -admins]
-                         [-sync]
-                         -log [folder to place run log]
+GithubLdap.java				Class file implementing the administrative DL processes for Github Enterprise.
