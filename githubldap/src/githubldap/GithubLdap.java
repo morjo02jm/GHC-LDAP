@@ -73,7 +73,7 @@ public class GithubLdap
 			}			
 			else if (args[i].compareToIgnoreCase("-del") == 0 )
 			{
-				sAddFile = args[++i];
+				sDelFile = args[++i];
 			}			
 			else if (args[i].compareToIgnoreCase("-synch") == 0 )
 			{
