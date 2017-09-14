@@ -98,10 +98,10 @@ public class GithubLdap
 			
 			else {
 				frame.printLog("Usage: githubldap [-add textfile]"
-			                                       + " [-del textfile] "
-			                                       + " [-dump textfile] "
-			                                       + " [ -developers | -admins ] "
-						                           + " [-log textfile] [-h |-?]");
+				                               + " [-del textfile] "
+				                               + " [-dump textfile] "
+				                               + " [ -developers | -admins ] "
+					                           + " [-log textfile] [-h |-?]");
 				frame.printLog(" -add option will add users to DL for pmfkeys in textfile param.");
 				frame.printLog(" -del option will remove users from DL for pmfkeys in textfile param.");
 				frame.printLog(" -dump option will dump user in DL to textfile param.");
@@ -126,10 +126,38 @@ public class GithubLdap
 		           sBCC,
 		           cLDAP);
 
-		if (!sAddFile.isEmpty())
-			frame.readUserListToContainer(cAddUsers, sAddFile);
-		if (!sDelFile.isEmpty())
+		if (!sAddFile.isEmpty()) {
+			if (sAddFile.contains(".csv")) {
+				JCaContainer cAddUsers2 = new JCaContainer();
+				frame.readInputListGeneric(cAddUsers2, sAddFile,',');
+				for (int iIndex=0; iIndex<cAddUsers2.getKeyElementCount("id"); iIndex++) {
+					frame.readLDAPEntry(cAddUsers, 
+									    cLDAP,
+										cAddUsers.getString("id", iIndex),
+										cAddUsers.getString("type",iIndex).equalsIgnoreCase("group"),
+										cAddUsers.getString("recurse", iIndex).equalsIgnoreCase("yes"),
+										false);					
+				}
+			}
+			else
+				frame.readUserListToContainer(cAddUsers, sAddFile);	
+		}
+
+		if (!sDelFile.isEmpty()) {
+			if (sDelFile.contains(".csv")) {
+				JCaContainer cDelUsers2 = new JCaContainer();
+				frame.readInputListGeneric(cDelUsers2, sDelFile,',');
+				for (int iIndex=0; iIndex<cDelUsers2.getKeyElementCount("id"); iIndex++) {
+					frame.readLDAPEntry(cDelUsers, 
+									    cLDAP,
+										cDelUsers.getString("id", iIndex),
+										cDelUsers.getString("type",iIndex).equalsIgnoreCase("group"),
+										cDelUsers.getString("recurse", iIndex).equalsIgnoreCase("yes"),
+										false);					
+				}
+			}
 			frame.readUserListToContainer(cDelUsers, sDelFile);
+		}
 
 		try {			
 			frame.processStandardDL(aAuthSchemas,
