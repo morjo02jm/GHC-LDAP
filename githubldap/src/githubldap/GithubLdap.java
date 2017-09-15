@@ -30,20 +30,26 @@ public class GithubLdap
 		String sDumpFile = "";
 		
 		
+		String[] aDevelopersLDAPGroupFormat = 
+	  	{ 	
+			"cn=Development-Tools-Access-Group,ou=groups,ou=north america"
+	  	};
+		
 		String[] aAdminLDAPGroupFormat = 
 	  	{ 	
 			"cn=Team - GitHub - %s,ou=groups,ou=north america"
 	  	};
-		
-		String[] aDevelopersLDAPGroupFormat = 
+
+		String[] aDevelopersTestLDAPGroupFormat = 
 	  	{ 	
-			"cn=Development-Tools-Access-Group,ou=groups,ou=north america"
+			"cn=Team - GIS - Development-Tools-Access-Group-Test,ou=self service groups,ou=groups"
 	  	};
 
 		String[][] aDLLDAPGroupFormat =
 		{
 			aDevelopersLDAPGroupFormat,
-			aAdminLDAPGroupFormat
+			aAdminLDAPGroupFormat,
+			aDevelopersTestLDAPGroupFormat
 		};
 				
 		String[] aUserAuthAdminSchemas =
@@ -56,11 +62,17 @@ public class GithubLdap
 			"Developers" 
 		};
 
+		String[] aUserAuthTestSchemas =
+		{
+			"Test" 
+		};
+
 		
 		String[][] aAuthSchemas =
 		{
 				aUserAuthDeveloperSchemas,
-				aUserAuthAdminSchemas
+				aUserAuthAdminSchemas,
+				aUserAuthTestSchemas
 		};
 		
 		
@@ -94,6 +106,10 @@ public class GithubLdap
 			else if (args[i].compareToIgnoreCase("-admins") == 0 )
 			{
 				iUserType = 1;
+			}	
+			else if (args[i].compareToIgnoreCase("-test") == 0 )
+			{
+				iUserType = 2;
 			}	
 			
 			else {
