@@ -42,7 +42,7 @@ public class GithubLdap
 
 		String[] aDevelopersTestLDAPGroupFormat = 
 	  	{ 	
-			"cn=Team - GIS - Development-Tools-Access-Group-Test,ou=self service groups,ou=groups"
+			"cn=Team - GIS - Developer-Tools-Access-Group-Test,ou=self service groups,ou=groups"
 	  	};
 
 		String[][] aDLLDAPGroupFormat =
@@ -149,9 +149,9 @@ public class GithubLdap
 				for (int iIndex=0; iIndex<cAddUsers2.getKeyElementCount("id"); iIndex++) {
 					frame.readLDAPEntry(cAddUsers, 
 									    cLDAP,
-										cAddUsers.getString("id", iIndex),
-										cAddUsers.getString("type",iIndex).equalsIgnoreCase("group"),
-										cAddUsers.getString("recurse", iIndex).equalsIgnoreCase("yes"),
+										cAddUsers2.getString("id", iIndex),
+										cAddUsers2.getString("type",iIndex).equalsIgnoreCase("group"),
+										cAddUsers2.getString("recurse", iIndex).equalsIgnoreCase("yes"),
 										false);					
 				}
 			}
@@ -166,9 +166,9 @@ public class GithubLdap
 				for (int iIndex=0; iIndex<cDelUsers2.getKeyElementCount("id"); iIndex++) {
 					frame.readLDAPEntry(cDelUsers, 
 									    cLDAP,
-										cDelUsers.getString("id", iIndex),
-										cDelUsers.getString("type",iIndex).equalsIgnoreCase("group"),
-										cDelUsers.getString("recurse", iIndex).equalsIgnoreCase("yes"),
+										cDelUsers2.getString("id", iIndex),
+										cDelUsers2.getString("type",iIndex).equalsIgnoreCase("group"),
+										cDelUsers2.getString("recurse", iIndex).equalsIgnoreCase("yes"),
 										false);					
 				}
 			}
