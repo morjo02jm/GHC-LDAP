@@ -1,6 +1,8 @@
 package githubldap;
 //comment
 
+import java.util.*;
+
 import commonldap.CommonLdap;
 import commonldap.JCaContainer;
 
@@ -22,16 +24,19 @@ public class GithubLdap
 	public static void main(String[] args)
 	{
 		int iParms = args.length;
+		int iUserType = 0;
+
 		String sBCC = "";
 		String sLogPath = "scmldap.log";
 		String sAddFile = "";
 		String sDelFile = "";
-		boolean bSynch = false;
-		int iUserType = 0;
 		String sDumpFile = "";
+
+		boolean bSynch = false;
+		boolean bNewUsersOnly = false;
 		
 		
-		String[] aDevelopersLDAPGroupFormat = 
+		String[] aDevelopersProdLDAPGroupFormat = 
 	  	{ 	
 			"cn=Development-Tools-Access-Group,ou=groups,ou=north america"
 	  	};
@@ -46,11 +51,17 @@ public class GithubLdap
 			"cn=Team - GIS - Developer-Tools-Access-Group-Test,ou=self service groups,ou=groups"
 	  	};
 
+		String[] aDevelopersDevLDAPGroupFormat = 
+	  	{ 	
+			"cn=Team - GIS - Developer-Tools-Access-Group-Dev,ou=self service groups,ou=groups"
+	  	};
+
 		String[][] aDLLDAPGroupFormat =
 		{
-			aDevelopersLDAPGroupFormat,
+			aDevelopersProdLDAPGroupFormat,
 			aAdminLDAPGroupFormat,
-			aDevelopersTestLDAPGroupFormat
+			aDevelopersTestLDAPGroupFormat,
+			aDevelopersDevLDAPGroupFormat
 		};
 				
 		String[] aUserAuthAdminSchemas =
@@ -68,12 +79,18 @@ public class GithubLdap
 			"Test" 
 		};
 
+		String[] aUserAuthDevSchemas =
+		{
+			"Dev" 
+		};
+
 		
 		String[][] aAuthSchemas =
 		{
 				aUserAuthDeveloperSchemas,
 				aUserAuthAdminSchemas,
-				aUserAuthTestSchemas
+				aUserAuthTestSchemas,
+				aUserAuthDevSchemas
 		};
 		
 		
@@ -96,6 +113,10 @@ public class GithubLdap
 			{
 				sDumpFile = args[++i];
 			}			
+			else if (args[i].compareToIgnoreCase("-newusersonly") == 0 )
+			{
+				bNewUsersOnly = true;
+			}			
 			else if (args[i].compareToIgnoreCase("-log") == 0 )
 			{
 				sLogPath = args[++i];
@@ -109,6 +130,10 @@ public class GithubLdap
 				iUserType = 1;
 			}	
 			else if (args[i].compareToIgnoreCase("-test") == 0 )
+			{
+				iUserType = 2;
+			}	
+			else if (args[i].compareToIgnoreCase("-dev") == 0 )
 			{
 				iUserType = 2;
 			}	
@@ -136,47 +161,84 @@ public class GithubLdap
 
 		JCaContainer cAddUsers = new JCaContainer();
 		JCaContainer cDelUsers = new JCaContainer();
+		JCaContainer cGHEUsers = new JCaContainer();
 		
 		JCaContainer cLDAP = new JCaContainer();
 		frame = new CommonLdap("githubldap",
 		           sLogPath,
 		           sBCC,
 		           cLDAP);
-
-		if (!sAddFile.isEmpty()) {
-			if (sAddFile.contains(".csv")) {
-				JCaContainer cAddUsers2 = new JCaContainer();
-				frame.readInputListGeneric(cAddUsers2, sAddFile,',');
-				for (int iIndex=0; iIndex<cAddUsers2.getKeyElementCount("id"); iIndex++) {
-					frame.readLDAPEntry(cAddUsers, 
-									    cLDAP,
-										cAddUsers2.getString("id", iIndex),
-										cAddUsers2.getString("type",iIndex).equalsIgnoreCase("group"),
-										cAddUsers2.getString("recurse", iIndex).equalsIgnoreCase("yes"),
-										false);					
+		
+		
+		try {
+	        if (bNewUsersOnly) {
+				String sAccessToken="";
+				String sAPIToken = "";
+				String sType = "ghe";
+				
+				
+				switch (iUserType) {
+				case 0:
+				case 1:
+					sAPIToken="GITHUB_ACCESS_TOKEN";
+					sType = "ghe";
+				default:
+					break;
+				case 2:
+					sAPIToken="GITHUB_TEST_ACCESS_TOKEN";
+					sType = "ghe-test";
+					break;
+				case 3:
+					sAPIToken="GITHUB_DEV_ACCESS_TOKEN";
+					sType = "ghe-dev";
+					break;
 				}
-			}
-			else
-				frame.readUserListToContainer(cAddUsers, sAddFile);	
-		}
-
-		if (!sDelFile.isEmpty()) {
-			if (sDelFile.contains(".csv")) {
-				JCaContainer cDelUsers2 = new JCaContainer();
-				frame.readInputListGeneric(cDelUsers2, sDelFile,',');
-				for (int iIndex=0; iIndex<cDelUsers2.getKeyElementCount("id"); iIndex++) {
-					frame.readLDAPEntry(cDelUsers, 
-									    cLDAP,
-										cDelUsers2.getString("id", iIndex),
-										cDelUsers2.getString("type",iIndex).equalsIgnoreCase("group"),
-										cDelUsers2.getString("recurse", iIndex).equalsIgnoreCase("yes"),
-										false);					
+	        	
+				Map<String, String> environ = System.getenv();
+		        for (String envName : environ.keySet()) {
+		        	if (envName.equalsIgnoreCase(sAPIToken))     
+		        		sAccessToken = environ.get(envName);
+		        }
+		        
+		        frame.readGitHubInstanceUsers(cGHEUsers, sAccessToken, sType);
+	        }
+	        
+	        
+			if (!sAddFile.isEmpty()) {
+				if (sAddFile.contains(".csv")) {
+					JCaContainer cAddUsers2 = new JCaContainer();
+					frame.readInputListGeneric(cAddUsers2, sAddFile,',');
+					for (int iIndex=0; iIndex<cAddUsers2.getKeyElementCount("id"); iIndex++) {
+						frame.readLDAPEntry(cAddUsers, 
+										    cLDAP,
+											cAddUsers2.getString("id", iIndex),
+											cAddUsers2.getString("type",iIndex).equalsIgnoreCase("group"),
+											cAddUsers2.getString("recurse", iIndex).equalsIgnoreCase("yes"),
+											false,
+											cGHEUsers);					
+					}
 				}
+				else
+					frame.readUserListToContainer(cAddUsers, sAddFile);	
 			}
-			frame.readUserListToContainer(cDelUsers, sDelFile);
-		}
+			
+	
+			if (!sDelFile.isEmpty()) {
+				if (sDelFile.contains(".csv")) {
+					JCaContainer cDelUsers2 = new JCaContainer();
+					frame.readInputListGeneric(cDelUsers2, sDelFile,',');
+					for (int iIndex=0; iIndex<cDelUsers2.getKeyElementCount("id"); iIndex++) {
+						frame.readLDAPEntry(cDelUsers, 
+										    cLDAP,
+											cDelUsers2.getString("id", iIndex),
+											cDelUsers2.getString("type",iIndex).equalsIgnoreCase("group"),
+											cDelUsers2.getString("recurse", iIndex).equalsIgnoreCase("yes"),
+											false);					
+					}
+				}
+				frame.readUserListToContainer(cDelUsers, sDelFile);
+			}
 
-		try {			
 			frame.processStandardDL(aAuthSchemas,
 					                aDLLDAPGroupFormat, 
 					                cLDAP, 
