@@ -48,12 +48,12 @@ public class GithubLdap
 
 		String[] aDevelopersTestLDAPGroupFormat = 
 	  	{ 	
-			"cn=Team - GIS - Developer-Tools-Access-Group-Test,ou=self service groups,ou=groups"
+			"cn=Team - GIS - Development-Tools-Access-Group-Test,ou=self service groups,ou=groups"
 	  	};
 
 		String[] aDevelopersDevLDAPGroupFormat = 
 	  	{ 	
-			"cn=Team - GIS - Developer-Tools-Access-Group-Dev,ou=self service groups,ou=groups"
+			"cn=Team - GIS - Development-Tools-Access-Group-Dev,ou=self service groups,ou=groups"
 	  	};
 
 		String[][] aDLLDAPGroupFormat =
@@ -66,22 +66,22 @@ public class GithubLdap
 				
 		String[] aUserAuthAdminSchemas =
 		{
-			"Admins" 
+			"GHE Administrators" 
 		};
 		
 		String[] aUserAuthDeveloperSchemas =
 		{
-			"Developers" 
+			"GHE Production Developers" 
 		};
 
 		String[] aUserAuthTestSchemas =
 		{
-			"Test" 
+			"GHE Test Developers" 
 		};
 
 		String[] aUserAuthDevSchemas =
 		{
-			"Dev" 
+			"GHE Development Developers" 
 		};
 
 		
@@ -135,7 +135,7 @@ public class GithubLdap
 			}	
 			else if (args[i].compareToIgnoreCase("-dev") == 0 )
 			{
-				iUserType = 2;
+				iUserType = 3;
 			}	
 			
 			else {
@@ -200,7 +200,8 @@ public class GithubLdap
 		        		sAccessToken = environ.get(envName);
 		        }
 		        
-		        frame.readGitHubInstanceUsers(cGHEUsers, sAccessToken, sType);
+		        //frame.readGitHubInstanceUsers(cGHEUsers, sAccessToken, sType);
+		        frame.readGitHubSuspendedUsers(cGHEUsers, sAccessToken, sType);
 	        }
 	        
 	        
@@ -233,7 +234,8 @@ public class GithubLdap
 											cDelUsers2.getString("id", iIndex),
 											cDelUsers2.getString("type",iIndex).equalsIgnoreCase("group"),
 											cDelUsers2.getString("recurse", iIndex).equalsIgnoreCase("yes"),
-											false);					
+											false,
+											cGHEUsers);					
 					}
 				}
 				frame.readUserListToContainer(cDelUsers, sDelFile);
