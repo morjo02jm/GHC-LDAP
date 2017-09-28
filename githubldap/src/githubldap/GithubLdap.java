@@ -142,7 +142,8 @@ public class GithubLdap
 				frame.printLog("Usage: githubldap [-add textfile]"
 				                               + " [-del textfile] "
 				                               + " [-dump textfile] "
-				                               + " [ -developers | -admins ] "
+				                               + " [-developers | -admins | -test | -dev ] "
+				                               + " [-newusersonly ] "
 					                           + " [-log textfile] [-h |-?]");
 				frame.printLog(" -add option will add users to DL for pmfkeys in textfile param.");
 				frame.printLog(" -del option will remove users from DL for pmfkeys in textfile param.");
