@@ -15,11 +15,17 @@
 	</properties>
 
 	<dependencies>
+		<!-- http://isl-dsdc.ca.com/artifactory/p2-local -->
+		<dependency>
+			<groupId>commonldap.shared</groupId>
+			<artifactId>commonldap</artifactId>
+			<version>latest</version>
+		</dependency>
 	</dependencies>
 	<repositories>
 		<repository>
-			<id>p2-local</id>
-			<url>http://isl-dsdc.ca.com:80/artifactory/p2-local/commonldap/library</url>
+			<id>commonldap</id>
+			<url>http://isl-dsdc.ca.com/artifactory/p2-local/</url>
 		</repository>
 	</repositories>
 </project>
