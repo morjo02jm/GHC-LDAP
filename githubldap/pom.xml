@@ -23,11 +23,21 @@
 			<artifactId>commonldap</artifactId>
 			<version>latest</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.json/json -->
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20171018</version>
+		</dependency>
 	</dependencies>
 	<repositories>
 		<repository>
 			<id>commonldap</id>
 			<url>http://isl-dsdc.ca.com/artifactory/p2-local/</url>
+		</repository>
+		<repository>
+			<id>sqljdbc4</id>
+			<url>http://isl-dsdc.ca.com/artifactory/maven-third-party-local/</url>
 		</repository>
 	</repositories>
 	<build>
