@@ -1,5 +1,4 @@
 package commonldap.githubldap;
-//comment
 
 import java.util.*;
 
